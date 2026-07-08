@@ -1,6 +1,7 @@
 import { useEffect, useRef, useCallback } from "react"
-import { Download, Plus } from "lucide-react"
+import { Download, Plus, ExternalLink } from "lucide-react"
 import { useQueryState } from "nuqs"
+import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { ConditionTree } from "./ConditionTree"
@@ -16,6 +17,7 @@ function hasCompleteRule(node: ConditionNode): boolean {
 }
 
 export function FocusBuilder() {
+  const navigate = useNavigate()
   const [focusSets, setFocusSets] = useState<FocusSetView[]>([])
   const [attributes, setAttributes] = useState<AttributeOption[]>([])
   const [previewCount, setPreviewCount] = useState<number | null>(null)
@@ -151,6 +153,14 @@ export function FocusBuilder() {
                     <p className="text-sm text-muted-foreground">{set.productCount} SKUs</p>
                   </div>
                   <div className="flex shrink-0 gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      aria-label={`Open ${set.name} in grid`}
+                      onClick={() => navigate(`/product-grid?focus=${set.id}`)}
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" strokeWidth={1.5} />
+                    </Button>
                     <Button
                       size="sm"
                       variant="outline"
