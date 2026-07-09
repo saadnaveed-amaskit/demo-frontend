@@ -44,12 +44,16 @@ When("I change a guardrail's value inline", async () => {
 Then("the new value is persisted", async () => {
   const page = getPage()
   const expectedValue = (globalThis as Record<string, unknown>).__newGuardrailValue as string
-  // Wait for table to update
-  await page.getByTestId("guardrails-table").waitFor({ state: "attached" })
-  // The updated row's value cell should show the new value
-  const cell = page.getByTestId("guardrail-value-cell").first()
-  await cell.waitFor({ state: "attached" })
-  const text = (await cell.textContent()) ?? ""
+  // Poll until the first value cell reflects the API response + re-render
+  await page.waitForFunction(
+    (val: string) => {
+      const cell = document.querySelector('[data-testid="guardrail-value-cell"]')
+      return (cell?.textContent ?? "").includes(val)
+    },
+    expectedValue,
+    { timeout: 10000 },
+  )
+  const text = (await page.getByTestId("guardrail-value-cell").first().textContent()) ?? ""
   assert.ok(
     text.includes(expectedValue),
     `Expected cell to contain "${expectedValue}", got "${text}"`,
