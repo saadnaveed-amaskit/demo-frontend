@@ -6,6 +6,7 @@ import { ProductGrid } from "@/screens/product-grid/ProductGrid"
 import { GuardrailsScreen } from "@/screens/guardrails/GuardrailsScreen"
 import { PromotionsScreen } from "@/screens/promotions/PromotionsScreen"
 import { DiscountModelingScreen } from "@/screens/discount-modeling/DiscountModelingScreen"
+import { PriceScenariosScreen } from "@/screens/price-scenarios/PriceScenariosScreen"
 import { NAV_SECTIONS, UNLISTED_SCREENS } from "./nav"
 
 const IMPLEMENTED: Record<string, React.ReactElement> = {
@@ -14,6 +15,7 @@ const IMPLEMENTED: Record<string, React.ReactElement> = {
   "/guardrails": <GuardrailsScreen />,
   "/promos": <PromotionsScreen />,
   "/discount-modeling": <DiscountModelingScreen />,
+  "/scenario": <PriceScenariosScreen />,
 }
 
 const screens = [
