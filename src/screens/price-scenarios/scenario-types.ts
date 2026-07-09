@@ -89,3 +89,87 @@ export interface FocusSetOption {
   name: string
   skuCount: number
 }
+
+// ---------------------------------------------------------------------------
+// Deep Dive types (Tier-2)
+// ---------------------------------------------------------------------------
+
+export interface SkuRecommendationRow {
+  sku: string
+  productName: string
+  category: string
+  brand: string
+  currentPrice: number
+  recommendedPrice: number
+  priceChange: number
+  priceChangePct: number
+  currentGrossMargin: number
+  projectedGrossMargin: number
+  weeklyRevenue: number
+  projectedRevenue: number
+  currentWeeksOfSupply: number
+  projectedWeeksOfSupply: number
+  unlockLevel: number
+}
+
+export interface DecisionLadderItem {
+  rank: number
+  constraint: string
+  decision: string
+}
+
+export interface ContextualFactor {
+  factor: "Competitor price range" | "Weeks of supply" | "Elasticity"
+  value: string
+  impact: "positive" | "neutral" | "negative"
+}
+
+export interface ExplainTrace {
+  sku: string
+  rationale: string
+  drivingObjectives: string[]
+  decisionLadder: DecisionLadderItem[]
+  contextualFactors: ContextualFactor[]
+}
+
+export interface MarketingTileProduct {
+  sku: string
+  productName: string
+  currentPrice: number
+  promoPrice: number
+}
+
+export interface MarketingTile {
+  id: string
+  campaign: string
+  type: string
+  discount: string
+  skuCount: number
+  projectedLift: string
+  unlockLevel: number
+  products: MarketingTileProduct[]
+}
+
+export interface DiscountTileProduct {
+  sku: string
+  productName: string
+  currentPrice: number
+  discountedPrice: number
+}
+
+export interface DiscountTile {
+  id: string
+  name: string
+  type: string
+  depth: string
+  skuCount: number
+  projectedSellThrough: string
+  unlockLevel: number
+  products: DiscountTileProduct[]
+}
+
+export interface DeepDiveOutput {
+  priceAdjustments: SkuRecommendationRow[]
+  marketingTiles: MarketingTile[]
+  discountTiles: DiscountTile[]
+}

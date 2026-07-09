@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react"
 import { motion } from "framer-motion"
 import { ResponsiveLine } from "@nivo/line"
-import { Plus, AlertTriangle, ChevronDown, ChevronRight } from "lucide-react"
+import { Plus, AlertTriangle, ChevronDown, ChevronRight, Microscope } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import type {
@@ -13,6 +13,7 @@ import type {
 import { createScenario, deleteScenario, listScenarios, runScenario, submitScenario } from "./scenarios-api"
 import { listFocusSets } from "../discount-modeling/focus-sets-ref-api"
 import type { FocusSetSummary } from "../discount-modeling/focus-sets-ref-api"
+import { DeepDiveSection } from "./DeepDiveSection"
 
 const PAGE_TRANSITION = { initial: { opacity: 0, y: 6 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.18, ease: "easeOut" as const } }
 
@@ -374,11 +375,14 @@ interface OutputViewProps {
   onResubmit: () => void
 }
 
+type OutputTab = "summary" | "deep-dive"
+
 function OutputView({ scenario, output, onDiscard, onSubmit, onResubmit }: OutputViewProps) {
   const frozen = ["pending", "approved", "denied"].includes(scenario.status)
   const [localLevel, setLocalLevel] = useState(scenario.optimizationLevel)
   const [expandedRecs, setExpandedRecs] = useState(false)
   const [confirmDiscard, setConfirmDiscard] = useState(false)
+  const [outputTab, setOutputTab] = useState<OutputTab>("summary")
 
   const scenarioPoint = useMemo(
     () => interpolateFrontier(output.frontier, localLevel),
@@ -424,7 +428,7 @@ function OutputView({ scenario, output, onDiscard, onSubmit, onResubmit }: Outpu
         </div>
       )}
 
-      {/* Optimization slider */}
+      {/* Optimization slider — always visible; drives both Summary and Deep Dive */}
       <div className="space-y-1">
         <div className="flex justify-between text-xs">
           <span className="text-zinc-500">Optimization Level</span>
@@ -449,87 +453,124 @@ function OutputView({ scenario, output, onDiscard, onSubmit, onResubmit }: Outpu
         </div>
       </div>
 
-      {/* Frontier chart */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-        <div className="text-xs font-medium text-zinc-500 mb-2">Profit vs Revenue Frontier</div>
-        <FrontierChart output={output} scenarioPoint={scenarioPoint} />
+      {/* Output tabs */}
+      <div className="flex gap-1 border-b border-zinc-200 dark:border-zinc-800">
+        <button
+          onClick={() => setOutputTab("summary")}
+          className={`px-3 py-1.5 text-xs font-medium rounded-t transition-colors border-b-2 -mb-px ${
+            outputTab === "summary"
+              ? "border-teal-500 text-teal-600"
+              : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          Summary
+        </button>
+        <button
+          data-testid="deep-dive-tab-btn"
+          onClick={() => setOutputTab("deep-dive")}
+          className={`flex items-center gap-1 px-3 py-1.5 text-xs font-medium rounded-t transition-colors border-b-2 -mb-px ${
+            outputTab === "deep-dive"
+              ? "border-teal-500 text-teal-600"
+              : "border-transparent text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300"
+          }`}
+        >
+          <Microscope size={12} strokeWidth={1.5} />
+          Deep Dive
+        </button>
       </div>
 
-      {/* 3-column comparison table */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
-        <table className="w-full text-xs">
-          <thead className="bg-zinc-50 dark:bg-zinc-800">
-            <tr>
-              <th className="text-left px-3 py-2 text-zinc-500 font-medium">Metric</th>
-              <th className="text-right px-3 py-2 text-zinc-500 font-medium">Current</th>
-              <th className="text-right px-3 py-2 text-teal-600 font-medium">Scenario</th>
-              <th className="text-right px-3 py-2 text-zinc-500 font-medium">ML Rec</th>
-            </tr>
-          </thead>
-          <tbody>
-            {output.comparison.map((row) => (
-              <tr key={row.metric} className="border-t border-zinc-100 dark:border-zinc-800">
-                <td className="px-3 py-1.5 text-zinc-700 dark:text-zinc-300 font-medium">{row.metric}</td>
-                <td className="px-3 py-1.5 text-right text-zinc-500">{row.current}</td>
-                <td className="px-3 py-1.5 text-right font-semibold text-teal-600">{row.scenario}</td>
-                <td className="px-3 py-1.5 text-right text-zinc-500">{row.mlRec}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-
-      {/* Narrative */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
-        <div className="text-xs font-medium text-zinc-500">AI Narrative</div>
-        <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{output.narrative}</p>
-        <div className="flex items-center gap-1.5 text-xs text-amber-600">
-          <AlertTriangle size={12} strokeWidth={1.5} />
-          <span>{output.uncertainty}</span>
-        </div>
-      </div>
-
-      {/* Guardrail results */}
-      {output.guardrailResults.length > 0 && (
-        <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-          <div className="text-xs font-medium text-zinc-500 mb-2">Guardrail Compliance</div>
-          <div className="space-y-1">
-            {output.guardrailResults.map((g) => (
-              <div key={g.id} className="flex items-center justify-between text-xs">
-                <span className={g.passed ? "text-teal-600" : "text-red-500"}>
-                  {g.passed ? "✓" : "✗"} {g.rule} {g.op} {g.threshold}{g.unit}
-                </span>
-                <span className={`text-xs ${g.severity === "hard" ? "text-red-500" : "text-amber-500"}`}>
-                  {g.severity}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
+      {/* Deep Dive tab */}
+      {outputTab === "deep-dive" && (
+        <DeepDiveSection scenarioId={scenario.id} localLevel={localLevel} />
       )}
 
-      {/* Tagged recommendations */}
-      <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
-        <button
-          className="flex items-center gap-1.5 w-full text-left text-xs font-medium text-zinc-500 mb-2"
-          onClick={() => setExpandedRecs((v) => !v)}
-        >
-          {expandedRecs ? <ChevronDown size={12} strokeWidth={1.5} /> : <ChevronRight size={12} strokeWidth={1.5} />}
-          Recommendations ({output.recommendations.length})
-        </button>
-        {expandedRecs && (
-          <div className="space-y-2 mt-2">
-            {output.recommendations.map((rec, i) => (
-              <div key={i} className="flex gap-2 items-start text-xs">
-                <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${TAG_COLORS[rec.tag] ?? ""}`}>
-                  {rec.tag}
-                </span>
-                <span className="text-zinc-600 dark:text-zinc-400">{rec.text}</span>
-              </div>
-            ))}
+      {/* Summary tab content */}
+      {outputTab === "summary" && (
+        <>
+
+          {/* Frontier chart */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+            <div className="text-xs font-medium text-zinc-500 mb-2">Profit vs Revenue Frontier</div>
+            <FrontierChart output={output} scenarioPoint={scenarioPoint} />
           </div>
-        )}
-      </div>
+
+          {/* 3-column comparison table */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 overflow-hidden">
+            <table className="w-full text-xs">
+              <thead className="bg-zinc-50 dark:bg-zinc-800">
+                <tr>
+                  <th className="text-left px-3 py-2 text-zinc-500 font-medium">Metric</th>
+                  <th className="text-right px-3 py-2 text-zinc-500 font-medium">Current</th>
+                  <th className="text-right px-3 py-2 text-teal-600 font-medium">Scenario</th>
+                  <th className="text-right px-3 py-2 text-zinc-500 font-medium">ML Rec</th>
+                </tr>
+              </thead>
+              <tbody>
+                {output.comparison.map((row) => (
+                  <tr key={row.metric} className="border-t border-zinc-100 dark:border-zinc-800">
+                    <td className="px-3 py-1.5 text-zinc-700 dark:text-zinc-300 font-medium">{row.metric}</td>
+                    <td className="px-3 py-1.5 text-right text-zinc-500">{row.current}</td>
+                    <td className="px-3 py-1.5 text-right font-semibold text-teal-600">{row.scenario}</td>
+                    <td className="px-3 py-1.5 text-right text-zinc-500">{row.mlRec}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Narrative */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3 space-y-2">
+            <div className="text-xs font-medium text-zinc-500">AI Narrative</div>
+            <p className="text-sm text-zinc-700 dark:text-zinc-300 leading-relaxed">{output.narrative}</p>
+            <div className="flex items-center gap-1.5 text-xs text-amber-600">
+              <AlertTriangle size={12} strokeWidth={1.5} />
+              <span>{output.uncertainty}</span>
+            </div>
+          </div>
+
+          {/* Guardrail results */}
+          {output.guardrailResults.length > 0 && (
+            <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+              <div className="text-xs font-medium text-zinc-500 mb-2">Guardrail Compliance</div>
+              <div className="space-y-1">
+                {output.guardrailResults.map((g) => (
+                  <div key={g.id} className="flex items-center justify-between text-xs">
+                    <span className={g.passed ? "text-teal-600" : "text-red-500"}>
+                      {g.passed ? "✓" : "✗"} {g.rule} {g.op} {g.threshold}{g.unit}
+                    </span>
+                    <span className={`text-xs ${g.severity === "hard" ? "text-red-500" : "text-amber-500"}`}>
+                      {g.severity}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Tagged recommendations */}
+          <div className="rounded-lg border border-zinc-200 dark:border-zinc-800 p-3">
+            <button
+              className="flex items-center gap-1.5 w-full text-left text-xs font-medium text-zinc-500 mb-2"
+              onClick={() => setExpandedRecs((v) => !v)}
+            >
+              {expandedRecs ? <ChevronDown size={12} strokeWidth={1.5} /> : <ChevronRight size={12} strokeWidth={1.5} />}
+              Recommendations ({output.recommendations.length})
+            </button>
+            {expandedRecs && (
+              <div className="space-y-2 mt-2">
+                {output.recommendations.map((rec, i) => (
+                  <div key={i} className="flex gap-2 items-start text-xs">
+                    <span className={`px-1.5 py-0.5 rounded text-xs font-medium shrink-0 ${TAG_COLORS[rec.tag] ?? ""}`}>
+                      {rec.tag}
+                    </span>
+                    <span className="text-zinc-600 dark:text-zinc-400">{rec.text}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </>
+      )}
 
       {/* Discard confirm */}
       {confirmDiscard && (
