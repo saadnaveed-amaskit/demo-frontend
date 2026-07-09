@@ -1,4 +1,4 @@
-import type { ScenarioEntity } from "./scenario-types"
+import type { DeepDiveOutput, ScenarioEntity } from "./scenario-types"
 
 const API = import.meta.env.VITE_API_URL ?? "http://localhost:3000"
 
@@ -39,4 +39,10 @@ export async function submitScenario(id: number): Promise<ScenarioEntity> {
 
 export async function deleteScenario(id: number): Promise<void> {
   await fetch(`${API}/price-scenarios/${id}`, { method: "DELETE" })
+}
+
+export async function getDeepDive(id: number): Promise<DeepDiveOutput> {
+  const res = await fetch(`${API}/price-scenarios/${id}/deep-dive`)
+  if (!res.ok) throw new Error("Failed to fetch deep dive")
+  return res.json() as Promise<DeepDiveOutput>
 }
