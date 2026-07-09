@@ -5,6 +5,7 @@ import { FocusBuilder } from "@/screens/focus-builder/FocusBuilder"
 import { ProductGrid } from "@/screens/product-grid/ProductGrid"
 import { GuardrailsScreen } from "@/screens/guardrails/GuardrailsScreen"
 import { PromotionsScreen } from "@/screens/promotions/PromotionsScreen"
+import { DiscountModelingScreen } from "@/screens/discount-modeling/DiscountModelingScreen"
 import { NAV_SECTIONS, UNLISTED_SCREENS } from "./nav"
 
 const IMPLEMENTED: Record<string, React.ReactElement> = {
@@ -12,6 +13,7 @@ const IMPLEMENTED: Record<string, React.ReactElement> = {
   "/product-grid": <ProductGrid />,
   "/guardrails": <GuardrailsScreen />,
   "/promos": <PromotionsScreen />,
+  "/discount-modeling": <DiscountModelingScreen />,
 }
 
 const screens = [
