@@ -9,6 +9,7 @@ import { DiscountModelingScreen } from "@/screens/discount-modeling/DiscountMode
 import { PriceScenariosScreen } from "@/screens/price-scenarios/PriceScenariosScreen"
 import { ApprovalsScreen } from "@/screens/approvals/ApprovalsScreen"
 import { AgentsScreen } from "@/screens/agents/AgentsScreen"
+import { AutonomyScreen } from "@/screens/autonomy/AutonomyScreen"
 import { NAV_SECTIONS, UNLISTED_SCREENS } from "./nav"
 
 const IMPLEMENTED: Record<string, React.ReactElement> = {
@@ -20,6 +21,7 @@ const IMPLEMENTED: Record<string, React.ReactElement> = {
   "/scenario": <PriceScenariosScreen />,
   "/approvals": <ApprovalsScreen />,
   "/agents": <AgentsScreen />,
+  "/autonomy": <AutonomyScreen />,
 }
 
 const screens = [
