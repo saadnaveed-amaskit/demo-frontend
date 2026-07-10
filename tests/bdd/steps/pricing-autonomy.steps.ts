@@ -1,4 +1,4 @@
-import { Given, When, Then } from "@cucumber/cucumber"
+import { Before, Given, When, Then } from "@cucumber/cucumber"
 import { strict as assert } from "node:assert"
 import { getPage } from "../support/browser"
 
@@ -9,6 +9,12 @@ interface ActionClassEntity {
   id: number
   atReversibilityCeiling: boolean
 }
+
+Before(async () => {
+  // Kill-switch state is in-memory and process-wide (no reset endpoint) — ensure
+  // each scenario starts disengaged regardless of leftover state from a prior run.
+  await fetch(`${API_URL}/autonomy/kill-switch/disengage`, { method: "POST" })
+})
 
 // ---------------------------------------------------------------------------
 // Scenario: Block promotion below the reversibility ceiling
@@ -32,8 +38,9 @@ Given("an action class at its reversibility ceiling", async () => {
 
 When("I attempt to promote it", async () => {
   const page = getPage()
-  await page.getByTestId("action-class-card").first().click()
-  await page.getByTestId("promote-btn").click()
+  const card = page.getByTestId("action-class-card").first()
+  await card.click()
+  await card.getByTestId("promote-btn").click()
 })
 
 Then("promotion is blocked with a clear reason", async () => {
@@ -61,6 +68,12 @@ When("I engage the emergency kill switch", async () => {
 
 Then("all promote, veto, and undo controls are disabled and veto countdowns freeze", async () => {
   const page = getPage()
+  // The kill-switch click triggers an async engage + roster-refresh round trip;
+  // wait for the resulting re-render rather than asserting immediately.
+  await page.waitForFunction(() => {
+    const btn = document.querySelector('[data-testid="promote-btn"]') as HTMLButtonElement | null
+    return btn?.disabled === true
+  })
   const promoteDisabled = await page.getByTestId("promote-btn").first().getAttribute("disabled")
   assert.notEqual(promoteDisabled, null, "Expected promote button to be disabled while kill switch is engaged")
   const vetoDisabled = await page.getByTestId("veto-btn").first().getAttribute("disabled")
